@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSA Digital Signature - Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #1e3a8a; /* Dark blue */
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3b82f6; /* Medium blue */
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb; /* Light gray border */
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #102a43; /* Darker shade for card titles */
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151; /* Gray-700 */
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db; /* Gray-300 */
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+            font-size: 0.95rem;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+            border-color: #3b82f6; /* Blue-500 */
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+        button {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.95rem;
+        }
+        button:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+        }
+        .long-num-display {
+            font-family: monospace;
+            background-color: #f9fafb; /* Gray-50 */
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb; /* Gray-200 */
+            word-break: break-all;
+            white-space: pre-wrap; /* Allows wrapping while preserving spaces */
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: #1f2937; /* Gray-800 */
+        }
+        .result-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .result-box.success {
+            background-color: #d1fae5; /* Green-100 */
+            border: 1px solid #6ee7b7; /* Green-300 */
+            color: #065f46; /* Green-800 */
+        }
+        .result-box.error {
+            background-color: #fee2e2; /* Red-100 */
+            border: 1px solid #fca5a5; /* Red-300 */
+            color: #991b1b; /* Red-800 */
+        }
+        .grid-cols-inv {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Increased min-width for better readability */
+            gap: 1.5rem;
+        }
+        .key-param-label {
+            font-weight: 600; color: #4b5563; /* Gray-600 */
+        }
+        .key-param-value {
+             font-family: monospace; font-size: 0.8rem; color: #1f2937; /* Gray-800 */ word-break: break-all;
+        }
+        .error-message {
+            color: #ef4444; /* Red-500 */
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        th {
+            background-color: #4472C4;
+            color: white;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem;
+        }
+        .table-a th { background-color: #4472C4; }
+        .table-b th { background-color: #C55A11; }
+        .table-c th { background-color: #FFC000; }
+        .table-d th { background-color: #70AD47; }
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tr:nth-child(even) {
+            background-color: #f3f4f6;
+        }
+        tr.highlight-row {
+            background-color: #fef3c7;
+            color: #92400e;
+            font-weight: 600;
+        }
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        .add-record-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border: 1px dashed #d1d5db;
+        }
+        .propagation-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .diagram-title {
+            font-weight: 600;
+            text-align: center;
+            margin: 1rem 0;
+            font-size: 1.2rem;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="section-title">RSA Digital Signature: Inventory Management</h1>
+
+        <div class="add-record-section">
+            <h2 class="card-title">Add New Record</h2>
+            <div class="flex space-x-4">
+                <div class="w-1/5">
+                    <label for="itemId">Item ID:</label>
+                    <input type="text" id="itemId" value="004" placeholder="e.g., 004">
+                </div>
+                <div class="w-1/5">
+                    <label for="units">Units:</label>
+                    <input type="number" id="units" value="12" placeholder="e.g., 32">
+                </div>
+                <div class="w-1/5">
+                    <label for="price">Price:</label>
+                    <input type="number" id="price" value="18" placeholder="e.g., 12">
+                </div>
+                <div class="w-1/5">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" value="A" placeholder="e.g., A">
+                </div>
+                <div class="w-1/5 flex items-end">
+                    <button onclick="signRecord()" class="w-full">Sign & Propagate</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory grid with 2x2 layout -->
+        <div class="inventory-grid">
+            <!-- Inventory A -->
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="card-title">Inventory A</h2>
+                    <select id="signingInventory" class="w-40 h-10">
+                        <option value="A">Inventory A</option>
+                        <option value="B">Inventory B</option>
+                        <option value="C">Inventory C</option>
+                        <option value="D">Inventory D</option>
+                    </select>
+                </div>
+                <table class="table-a">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item QTY</th>
+                            <th>Item Price</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-a-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Inventory C -->
+            <div class="card">
+                <h2 class="card-title">Inventory C</h2>
+                <table class="table-c">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item QTY</th>
+                            <th>Item Price</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-c-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Propagation Label in the middle -->
+            <div class="col-span-2 text-center">
+                <div class="diagram-title">Propagate New Transaction</div>
+            </div>
+
+            <!-- Inventory B -->
+            <div class="card">
+                <h2 class="card-title">Inventory B</h2>
+                <table class="table-b">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item QTY</th>
+                            <th>Item Price</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-b-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Inventory D -->
+            <div class="card">
+                <h2 class="card-title">Inventory D</h2>
+                <table class="table-d">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item QTY</th>
+                            <th>Item Price</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-d-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-6">
+            <h2 class="card-title">Signing Output</h2>
+            <div id="signingResult"> 
+                <div class="space-y-3">
+                    <div>
+                        <span class="key-param-label">Original Message:</span>
+                        <div id="originalMessage" class="long-num-display p-3 border rounded bg-gray-50">N/A</div>
+                    </div>
+                    <div>
+                        <span class="key-param-label">Hash (SHA-256 Hex):</span>
+                        <div id="messageHash" class="long-num-display p-3 border rounded bg-gray-50">N/A</div>
+                    </div>
+                    <div>
+                        <span class="key-param-label">Digital Signature:</span>
+                        <div id="digitalSignature" class="long-num-display p-3 border rounded bg-gray-50">N/A</div>
+                    </div>
+                    <div>
+                        <span class="key-param-label">Signer's Public N:</span>
+                        <div id="signerN" class="long-num-display p-3 border rounded bg-gray-50">N/A</div>
+                    </div>
+                    <div>
+                        <span class="key-param-label">Signer's Public E:</span>
+                        <div id="signerE" class="long-num-display p-3 border rounded bg-gray-50">N/A</div>
+                    </div>
+                </div>
+                <div id="signError" class="result-box error mt-4" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Keep the automatic verification section -->
+        <div class="card">
+            <h2 class="card-title">Automatic Verification of All Records</h2>
+            <div class="mb-4">
+                <button onclick="verifyAllSignatures()" class="bg-green-600 hover:bg-green-700">Verify All Signatures</button>
+                <p class="text-sm text-gray-600 mt-2">This will verify all signed records against all inventory public keys to detect any tampering.</p>
+            </div>
+            <div id="allVerificationsContainer">
+                <p class="text-gray-500 italic">Click the button above to verify all records.</p>
+            </div>
+        </div>
+
+        <div class="card" style="display: none;">
+            <h2 class="card-title">Inventory RSA Key Parameters</h2>
+            <div id="keyDetailsContainer" class="grid-cols-inv">
+                <p class="text-gray-500">Loading key details...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let inventoryData = {}; 
+        let lastSignedRecord = null;
+
+        // Fetch inventory data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchInventoryData();
+            // Also verify all signatures on page load
+            verifyAllSignatures();
+            // Auto-fill the add record form on page load
+            setTimeout(autoFillAddRecordForm, 300);
+            document.getElementById('signingInventory').addEventListener('change', autoFillAddRecordForm);
+        });
+
+        async function fetchInventoryData() {
+            try {
+                const response = await fetch('/get_inventory_data');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                inventoryData = await response.json();
+                updateInventoryTables();
+            } catch (error) {
+                console.error("Error fetching inventory data:", error);
+                displayError("Failed to load inventory data. Please ensure the server is running.");
+            }
+        }
+
+        function updateInventoryTables() {
+            // Update each inventory table
+            updateInventoryTable('A', 'inventory-a-body');
+            updateInventoryTable('B', 'inventory-b-body');
+            updateInventoryTable('C', 'inventory-c-body');
+            updateInventoryTable('D', 'inventory-d-body');
+        }
+
+        function updateInventoryTable(inventoryId, tableBodyId) {
+            const tableBody = document.getElementById(tableBodyId);
+            const items = inventoryData[inventoryId] || [];
+            
+            if (items.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4">No items found</td></tr>`;
+                return;
+            }
+            
+            // Sort items by ID
+            items.sort((a, b) => a.id.localeCompare(b.id));
+            
+            let html = '';
+            items.forEach(item => {
+                const isHighlighted = lastSignedRecord && 
+                                     item.id === lastSignedRecord.item.id && 
+                                     item.location === lastSignedRecord.item.location;
+                
+                html += `<tr class="${isHighlighted ? 'highlight-row' : ''}">
+                    <td>${item.id}</td>
+                    <td>${item.units}</td>
+                    <td>${item.price}</td>
+                    <td>${item.location}</td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        async function signRecord() {
+            // Clear previous results
+            document.getElementById('signError').style.display = 'none';
+            
+            // Disable the button to prevent double-clicking
+            const signButton = document.querySelector('button[onclick="signRecord()"]');
+            const originalButtonText = signButton.textContent;
+            signButton.disabled = true;
+            signButton.textContent = "Processing...";
+            
+            const inventory_id = document.getElementById('signingInventory').value;
+            const item_id = document.getElementById('itemId').value;
+            const units = document.getElementById('units').value;
+            const price = document.getElementById('price').value;
+            const location = document.getElementById('location').value;
+            
+            if (!inventory_id || !item_id || !units || !price || !location) {
+                displaySignError("All fields are required");
+                signButton.disabled = false;
+                signButton.textContent = originalButtonText;
+                return;
+            }
+            
+            try {
+                const response = await fetch('/sign_record', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inventory_id, item_id, units, price, location
+                    }),
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Display signing results
+                document.getElementById('originalMessage').textContent = data.message;
+                document.getElementById('messageHash').textContent = data.hash_hex;
+                document.getElementById('digitalSignature').textContent = data.signature;
+                document.getElementById('signerN').textContent = data.public_n;
+                document.getElementById('signerE').textContent = data.public_e;
+                
+                // Show consensus result if available
+                const consensusResult = data.consensus ? 
+                    `<div class="mt-3 p-2 bg-green-100 text-green-800 rounded">Consensus: ${data.consensus}</div>` : '';
+                    
+                // Add messages to the signing result
+                document.getElementById('signingResult').insertAdjacentHTML('beforeend', consensusResult);
+                
+                // Set the last signed record to highlight it in the tables
+                lastSignedRecord = {
+                    item: {
+                        id: item_id,
+                        units: units,
+                        price: price,
+                        location: location
+                    }
+                };
+                
+                // Add a success message
+                const successMessage = `<div class="mt-3 p-2 bg-green-100 text-green-800 rounded">
+                    ✅ Record successfully added and propagated to all inventories!
+                </div>`;
+                document.getElementById('signingResult').insertAdjacentHTML('beforeend', successMessage);
+                
+                // Wait a moment before refreshing data to ensure backend has time to process
+                setTimeout(() => {
+                    // Refresh inventory data to show the propagated changes
+                    fetchInventoryData();
+                    
+                    // Also verify all signatures after adding a new record
+                    verifyAllSignatures();
+                    
+                    // Re-enable the button after verification completes
+                    setTimeout(() => {
+                        signButton.disabled = false;
+                        signButton.textContent = originalButtonText;
+                    }, 500);
+                }, 1000); // 1 second delay
+                
+            } catch (error) {
+                console.error("Error signing record:", error);
+                displaySignError(error.message);
+                
+                // Re-enable the button
+                signButton.disabled = false;
+                signButton.textContent = originalButtonText;
+            }
+        }
+
+        async function verifyAllSignatures() {
+            const container = document.getElementById('allVerificationsContainer');
+            container.innerHTML = '<p class="text-blue-600 font-medium">Verifying all signatures...</p>';
+            
+            try {
+                const response = await fetch('/verify_all_signatures');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    container.innerHTML = '<p class="text-gray-600">No signed records found to verify.</p>';
+                    return;
+                }
+                
+                let html = '';
+                
+                results.forEach((result, index) => {
+                    const record = result.record;
+                    const verifications = result.verifications;
+                    const originalSigner = result.original_signer;
+                    const propagationStatus = result.propagation_status;
+                    
+                    // Determine the color scheme based on propagation status
+                    let statusClass, statusText, statusBgClass;
+                    
+                    if (propagationStatus === "VALID") {
+                        statusClass = 'bg-green-100 border-green-300';
+                        statusText = 'Valid & Properly Propagated';
+                        statusBgClass = 'bg-green-600 text-white';
+                    } else if (propagationStatus === "INVALID") {
+                        statusClass = 'bg-red-100 border-red-300';
+                        statusText = 'Invalid Signature - POSSIBLE TAMPERING DETECTED';
+                        statusBgClass = 'bg-red-600 text-white';
+                    } else {
+                        statusClass = 'bg-yellow-100 border-yellow-300';
+                        statusText = 'Error in Verification Process';
+                        statusBgClass = 'bg-yellow-600 text-white';
+                    }
+                    
+                    html += `
+                        <div class="mb-6 p-4 border rounded-lg ${statusClass}">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-semibold text-lg">Record #${index + 1} - Signed by Inventory ${originalSigner}</h3>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium ${statusBgClass}">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            <p class="text-sm mb-2 font-medium">Message: ${record.message}</p>
+                            <p class="text-xs mb-4 text-gray-600">Signature: ${record.signature.substring(0, 30)}...</p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-4 py-2 bg-gray-200 text-gray-700">Inventory</th>
+                                            <th class="px-4 py-2 bg-gray-200 text-gray-700">Status</th>
+                                            <th class="px-4 py-2 bg-gray-200 text-gray-700">Role</th>
+                                            <th class="px-4 py-2 bg-gray-200 text-gray-700">Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    verifications.forEach(verification => {
+                        // Determine verification status display
+                        let statusBadge, roleText, roleClass;
+                        
+                        if (verification.status === "ORIGINAL_SIGNER") {
+                            roleText = "Original Signer";
+                            roleClass = "bg-blue-100 text-blue-800";
+                            
+                            statusBadge = verification.is_valid ? 
+                                '<span class="px-2 py-1 bg-green-100 text-green-800 rounded">Valid</span>' : 
+                                '<span class="px-2 py-1 bg-red-100 text-red-800 rounded">Invalid</span>';
+                        } 
+                        else if (verification.status === "PROPAGATED") {
+                            roleText = "Propagated Copy";
+                            roleClass = "bg-purple-100 text-purple-800";
+                            statusBadge = '<span class="px-2 py-1 bg-purple-100 text-purple-800 rounded">Propagated</span>';
+                        }
+                        else {
+                            roleText = "Error";
+                            roleClass = "bg-gray-100 text-gray-800";
+                            statusBadge = '<span class="px-2 py-1 bg-gray-100 text-gray-800 rounded">Error</span>';
+                        }
+                        
+                        const detailsText = verification.error ? 
+                            `Error: ${verification.error}` : 
+                            (verification.status === "ORIGINAL_SIGNER" ? 
+                                (verification.is_valid ? 'Signature verified successfully' : 'Invalid signature - possible tampering') :
+                                'Transaction propagated to this inventory');
+                        
+                        html += `
+                            <tr>
+                                <td class="border px-4 py-2">Inventory ${verification.inventory_id}</td>
+                                <td class="border px-4 py-2">${statusBadge}</td>
+                                <td class="border px-4 py-2"><span class="px-2 py-1 rounded ${roleClass}">${roleText}</span></td>
+                                <td class="border px-4 py-2 text-sm">${detailsText}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error("Error verifying all signatures:", error);
+                container.innerHTML = `<p class="text-red-600 font-medium">Error verifying signatures: ${error.message}</p>`;
+            }
+        }
+
+        function displaySignError(message) {
+            const errorElement = document.getElementById('signError');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function displayError(message) {
+            alert(message);
+        }
+
+        function autoFillAddRecordForm() {
+            const inventoryId = document.getElementById('signingInventory').value;
+            
+            // Always use 004,12,18,A as the default record to propagate
+            document.getElementById('itemId').value = '004';
+            document.getElementById('units').value = '12';
+            document.getElementById('price').value = '18';
+            document.getElementById('location').value = 'A';
+        }
+    </script>
+</body>
+</html>
